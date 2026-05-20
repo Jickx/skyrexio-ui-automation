@@ -5,11 +5,18 @@ from allure_commons.types import AttachmentType
 
 
 @pytest.fixture(scope="function")
-def driver():
+def browser_lang(request):
+    return getattr(request, "param", "en-US")
+
+
+@pytest.fixture(scope="function")
+def driver(browser_lang):
     with allure.step("Запустить браузер Chrome"):
         options = webdriver.ChromeOptions()
-        # options.add_argument("--headless")
+        options.add_argument("--headless")
         options.add_argument("--start-maximized")
+        options.add_argument(f"--lang={browser_lang}")
+        options.add_experimental_option("prefs", {"intl.accept_languages": browser_lang})
         options.set_capability("goog:loggingPrefs", {"browser": "ALL"})
         driver = webdriver.Chrome(options=options)
         driver.maximize_window()

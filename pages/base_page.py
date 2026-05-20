@@ -1,6 +1,7 @@
 import allure
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import WebDriverException
+from selenium.webdriver import ActionChains
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
 
@@ -64,19 +65,18 @@ class BasePage:
         )
         return element
 
-    @allure.step("Кликнуть JS по элементу: {locator}")
-    def js_click_on_element(self, locator, timeout=DEFAULT_TIMEOUT):
-        element = self.wait_for_element_visibility(locator, timeout)
-        self.driver.execute_script("arguments[0].click();", element)
-        return element
-
     @allure.step("Надежный клик по элементу: {locator}")
     def click_with_fallback(self, locator, timeout=DEFAULT_TIMEOUT):
         self.scroll_to_element(locator, timeout)
         try:
             return self.click_on_element(locator, timeout)
         except WebDriverException:
-            return self.js_click_on_element(locator, timeout)
+            element = self.wait_for_element_visibility(locator, timeout)
+            try:
+                ActionChains(self.driver).move_to_element(element).click().perform()
+            except WebDriverException:
+                element.send_keys(Keys.ENTER)
+            return element
 
     @allure.step("Дождаться кликабельности элемента: {locator}")
     def wait_for_element_to_be_clickable(self, locator, timeout=DEFAULT_TIMEOUT):
